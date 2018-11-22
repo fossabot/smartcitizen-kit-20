@@ -265,6 +265,11 @@ void SckESP::receiveMessage(ESPMessage wichMessage)
 			ledSet(0);
 			break;
 
+		case ESPMES_DO_OTA_UPDATE:
+
+			OTAupdate();
+			break;
+
 		default: break;
 	}
 }
@@ -872,6 +877,33 @@ bool SckESP::loadConfig()
 	ESP_Configuration newConfig;
 	config = newConfig;
 	saveConfig(config);
+	return false;
+}
+bool SckESP::OTAupdate()
+{
+	t_httpUpdate_return ret = ESPhttpUpdate.update(UPDATE_URL);
+
+	// TODO update also spiffs
+
+	switch(ret) {
+		case HTTP_UPDATE_FAILED:
+
+			debugOUT("HTTP_UPDATE_FAILED Error");
+			debugOUT(String(ESPhttpUpdate.getLastError()));
+			debugOUT(ESPhttpUpdate.getLastErrorString().c_str());
+			break;
+
+		case HTTP_UPDATE_NO_UPDATES:
+			debugOUT("HTTP_UPDATE_NO_UPDATES");
+			break;
+
+		case HTTP_UPDATE_OK:
+			debugOUT("HTTP_UPDATE_OK");
+			sendMessage(SAMMES_OTA_OK);
+			return true;
+			break;
+	}
+	sendMessage(SAMMES_OTA_ERROR);
 	return false;
 }
 

@@ -519,6 +519,7 @@ void esp_com(SckBase* base, String parameters)
 	else if (parameters.equals("-flash")) base->ESPcontrol(base->ESP_FLASH);
 	else if (parameters.equals("-sleep")) base->ESPcontrol(base->ESP_SLEEP);
 	else if (parameters.equals("-wake")) base->ESPcontrol(base->ESP_WAKEUP);
+	else if (parameters.equals("-update")) base->sendMessage(ESPMES_DO_OTA_UPDATE);
 	else base->sckOut("Unrecognized command , try help!!");
 }
 void netInfo_com(SckBase* base, String parameters)

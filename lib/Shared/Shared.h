@@ -18,6 +18,7 @@ enum ESPMessage {
 	ESPMES_MQTT_INVENTORY, 		// SAM->ESP, ESP publish inventory and returns result
 	ESPMES_MQTT_INFO, 		// SAM->ESP, ESP publish info and return result
 	ESPMES_MQTT_CUSTOM, 		// SAM->ESP, ESP publish custom message on custom topic
+	ESPMES_DO_OTA_UPDATE, 		// SAM->ESP, ESP try to do OTA update
 
 	ESPMES_COUNT
 };
@@ -42,6 +43,8 @@ enum SAMMessage {
 	SAMMES_MQTT_CUSTOM_OK, 		// ESP->SAM, On MQQT custom publish OK
 	SAMMES_MQTT_CUSTOM_ERROR,	// ESP->SAM, On MQQT custom publish error
 	SAMMES_SET_CONFIG,		// ESP->SAM, Sends new config
+	SAMMES_OTA_OK, 			// ESP->SAM, On OTA update OK
+	SAMMES_OTA_ERROR, 		// ESP->SAM, On OTA update error
 
 	SAMMES_COUNT
 };

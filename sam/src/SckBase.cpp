@@ -1063,6 +1063,15 @@ void SckBase::receiveMessage(SAMMessage wichMessage)
 			}
 			break;
 		}
+		case SAMMES_OTA_OK:
+			
+			sckOut("Esp updated!!!"); // TODO print version and update the flag that forces esp update
+			break;
+		case SAMMES_OTA_ERROR:
+
+			sckOut("ERROR on Esp update!!!"); // TODO print error type and do something (if sam has been updated and ESP doesn't we can have consistency problems)
+			break;
+
 		default: break;
 	}
 }

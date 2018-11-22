@@ -13,6 +13,8 @@
 #include <ArduinoJson.h>
 #include <RHReliableDatagram.h>
 #include <RH_Serial.h>
+#include <ESP8266HTTPClient.h>
+#include <ESP8266httpUpdate.h>
 #include <PubSubClient.h>
 
 #include <Arduino.h>
@@ -23,6 +25,8 @@
 #define MQTT_SERVER_NAME "mqtt.smartcitizen.me"
 #define MQTT_SERVER_PORT 80
 #define MQTT_QOS 1
+
+#define UPDATE_URL "https://github.com/fablabbcn/smartcitizen-kit-20/raw/master/bin/ESP_firmware.bin"
 
 struct Credentials { bool set=false; char ssid[64]="null"; char pass[64]="null"; };
 struct Token { bool set=false; char token[7]="null"; };
@@ -81,6 +85,9 @@ class SckESP
 		int currentWIFIStatus;
 		void tryConnection();
 		void wifiOFF();
+
+		// OTA Update
+		bool OTAupdate();
 
 		// Config
 		ESP_Configuration config;
