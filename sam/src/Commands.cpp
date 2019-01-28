@@ -298,7 +298,7 @@ void readSensor_com(SckBase* base, String parameters)
 {
 	SensorType sensorToRead = base->sensors.getTypeFromString(parameters);
 	if (!base->sensors[sensorToRead].enabled) sprintf(base->outBuff, "%s sensor is disabled!!!", base->sensors[sensorToRead].title);
-	else if (base->getReading(sensorToRead, true)) sprintf(base->outBuff, "%s: %s %s", base->sensors[sensorToRead].title, base->sensors[sensorToRead].reading.c_str(), base->sensors[sensorToRead].unit);
+	else if (base->getReading(sensorToRead)) sprintf(base->outBuff, "%s: %s %s", base->sensors[sensorToRead].title, base->sensors[sensorToRead].reading.c_str(), base->sensors[sensorToRead].unit);
 	else sprintf(base->outBuff, "ERROR reading %s sensor!!!", base->sensors[sensorToRead].title);
 	base->sckOut();
 }
@@ -391,7 +391,7 @@ void monitorSensor_com(SckBase* base, String parameters)
 		if (printMs) sprintf(base->outBuff, "%s%lu\t", base->outBuff, millis() - lastMillis);
 		lastMillis = millis();
 		for (uint8_t i=0; i<index; i++) {
-			if (base->getReading(sensorsToMonitor[i], true)) sprintf(base->outBuff, "%s%s", base->outBuff, base->sensors[sensorsToMonitor[i]].reading.c_str());
+			if (base->getReading(sensorsToMonitor[i])) sprintf(base->outBuff, "%s%s", base->outBuff, base->sensors[sensorsToMonitor[i]].reading.c_str());
 			else sprintf(base->outBuff, "%s%s", base->outBuff, "none");
 			if (i < index - 1) sprintf(base->outBuff, "%s\t", base->outBuff);
 		}

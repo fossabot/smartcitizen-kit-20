@@ -20,47 +20,23 @@ bool SckUrban::present()
 	return true;
 }
 
-bool SckUrban::setup(SckBase *base)
+bool SckUrban::setup()
 {
-	uint32_t currentTime = 0;
-	if (base->st.timeStat.ok) currentTime = base->rtc.getEpoch();
-
 	// To protect MICS turn off heaters
 	sck_mics4514.startPWM(); 	// Workaround Noise not working without mics init
-	sck_mics4514.stop(currentTime);
+	sck_mics4514.stop(rtc->getEpoch());
 
-	for (uint16_t i=0; i<SENSOR_COUNT; i++) {
-		SensorType thisType = SENSOR_COUNT;
-		thisType = static_cast<SensorType>(i);
-		if (base->sensors[thisType].location == BOARD_URBAN) {
-			if (base->sensors[thisType].enabled) {
-				switch(thisType) {
-					case SENSOR_LIGHT: 				if (!sck_bh1721fvc.start()) return false; break;
-					case SENSOR_TEMPERATURE:
-					case SENSOR_HUMIDITY: 				if (!sck_sht31.start()) return false; break;
-					case SENSOR_CO_RESISTANCE:
-					case SENSOR_NO2_RESISTANCE:			if (!sck_mics4514.start(currentTime))	return false; break;
-					case SENSOR_NOISE_DBA:
-					case SENSOR_NOISE_DBC:
-					case SENSOR_NOISE_DBZ:
-					case SENSOR_NOISE_FFT: 				if (!sck_noise.start()) return false; break;
-					case SENSOR_ALTITUDE:
-					case SENSOR_PRESSURE:
-					case SENSOR_PRESSURE_TEMP: 			if (!sck_mpl3115A2.start()) return false; break;
-					case SENSOR_PARTICLE_RED:
-					case SENSOR_PARTICLE_GREEN:
-					case SENSOR_PARTICLE_IR:
-					case SENSOR_PARTICLE_TEMPERATURE: 		if (!sck_max30105.start()) return false; break;
-					default: break;
-				}
-			}
-		}
-	}
+	if (!sck_bh1721fvc.start()) return false;
+	if (!sck_sht31.start()) return false;
+	if (!sck_mics4514.start(rtc->getEpoch())) return false;
+	if (!sck_noise.start()) return false;
+	if (!sck_mpl3115A2.start()) return false;
+	if (!sck_max30105.start()) return false;
+		
 	return true;
 };
 bool SckUrban::start(SensorType wichSensor)
 {
-	// TODO find a way to manage MICS start and stop time without pasing time as a parameter
 	switch(wichSensor) {
 		case SENSOR_LIGHT: 				if (sck_bh1721fvc.start()) return true; break;
 		case SENSOR_TEMPERATURE:
@@ -71,7 +47,7 @@ bool SckUrban::start(SensorType wichSensor)
 		case SENSOR_NO2_RESISTANCE:
 		case SENSOR_NO2_HEAT_VOLT:
 		case SENSOR_NO2_HEAT_TIME:
-		case SENSOR_NO2_LOAD_RESISTANCE:		if (sck_mics4514.start(0)) return true; break;
+		case SENSOR_NO2_LOAD_RESISTANCE:		if (sck_mics4514.start(rtc->getEpoch())) return true; break;
 		case SENSOR_NOISE_DBA:
 		case SENSOR_NOISE_DBC:
 		case SENSOR_NOISE_DBZ:
@@ -99,8 +75,6 @@ bool SckUrban::start(SensorType wichSensor)
 }
 bool SckUrban::stop(SensorType wichSensor)
 {
-
-	// TODO find a way to manage MICS start and stop time without pasing time as a parameter
 	switch(wichSensor) {
 		case SENSOR_LIGHT: 				if (sck_bh1721fvc.stop()) return true; break;
 		case SENSOR_TEMPERATURE:
@@ -111,7 +85,7 @@ bool SckUrban::stop(SensorType wichSensor)
 		case SENSOR_NO2_RESISTANCE:
 		case SENSOR_NO2_HEAT_VOLT:
 		case SENSOR_NO2_HEAT_TIME:
-		case SENSOR_NO2_LOAD_RESISTANCE:		if (sck_mics4514.stop(0)) return true; break;
+		case SENSOR_NO2_LOAD_RESISTANCE:		if (sck_mics4514.stop(rtc->getEpoch())) return true; break;
 		case SENSOR_NOISE_DBA:
 		case SENSOR_NOISE_DBC:
 		case SENSOR_NOISE_DBZ:
@@ -138,29 +112,19 @@ bool SckUrban::stop(SensorType wichSensor)
 	return false;
 }
 
-String SckUrban::getReading(SckBase *base, SensorType wichSensor, bool wait)
+String SckUrban::getReading(SensorType wichSensor)
 {
 
 	switch(wichSensor) {
-		case SENSOR_LIGHT:			if (sck_bh1721fvc.get(wait)) return String(sck_bh1721fvc.reading); break;
-		case SENSOR_TEMPERATURE: 		if (sck_sht31.update(wait)) return String(sck_sht31.temperature); break;
-		case SENSOR_HUMIDITY: 			if (sck_sht31.update(wait)) return String(sck_sht31.humidity); break;
+		case SENSOR_LIGHT:			if (sck_bh1721fvc.get()) return String(sck_bh1721fvc.reading); break;
+		case SENSOR_TEMPERATURE: 		if (sck_sht31.update()) return String(sck_sht31.temperature); break;
+		case SENSOR_HUMIDITY: 			if (sck_sht31.update()) return String(sck_sht31.humidity); break;
 		case SENSOR_CO_RESISTANCE: 		if (sck_mics4514.getCOresistance()) return String(sck_mics4514.coResistance); break;
 		case SENSOR_CO_HEAT_VOLT: 		return String(sck_mics4514.getCOheatVoltage()); break;
-		case SENSOR_CO_HEAT_TIME:
-			{
-				uint32_t currentTime = 0;
-				if (base->st.timeStat.ok) currentTime = base->rtc.getEpoch();
-				return String(sck_mics4514.getHeatTime(currentTime)); break;
-			}
+		case SENSOR_CO_HEAT_TIME:		return String(sck_mics4514.getHeatTime(rtc->getEpoch())); break;
 		case SENSOR_NO2_RESISTANCE: 		if (sck_mics4514.getNO2resistance()) return String(sck_mics4514.no2Resistance); break;
 		case SENSOR_NO2_HEAT_VOLT: 		return String(sck_mics4514.getNO2heatVoltage()); break;
-		case SENSOR_NO2_HEAT_TIME:
-			{
-				uint32_t currentTime = 0;
-				if (base->st.timeStat.ok) currentTime = base->rtc.getEpoch();
-				return String(sck_mics4514.getHeatTime(currentTime)); break;
-			}
+		case SENSOR_NO2_HEAT_TIME:		return String(sck_mics4514.getHeatTime(rtc->getEpoch())); break;
 		case SENSOR_NO2_LOAD_RESISTANCE:	if (sck_mics4514.getNO2load()) return String(sck_mics4514.no2LoadResistor); break;
 		case SENSOR_NOISE_DBA: 			if (sck_noise.getReading(SENSOR_NOISE_DBA)) return String(sck_noise.readingDB); break;
 		case SENSOR_NOISE_DBC: 			if (sck_noise.getReading(SENSOR_NOISE_DBC)) return String(sck_noise.readingDB); break;
@@ -172,13 +136,13 @@ String SckUrban::getReading(SckBase *base, SensorType wichSensor, bool wait)
 								return "Look above!";
 								break;
 							}
-		case SENSOR_ALTITUDE:			if (sck_mpl3115A2.getAltitude(wait)) return String(sck_mpl3115A2.altitude); break;
-		case SENSOR_PRESSURE:			if (sck_mpl3115A2.getPressure(wait)) return String(sck_mpl3115A2.pressure); break;
-		case SENSOR_PRESSURE_TEMP:		if (sck_mpl3115A2.getTemperature(wait)) return String(sck_mpl3115A2.temperature); break;
-		case SENSOR_PARTICLE_RED:		if (sck_max30105.getRed(wait)) return String(sck_max30105.redChann); break;
-		case SENSOR_PARTICLE_GREEN:		if (sck_max30105.getGreen(wait)) return String(sck_max30105.greenChann); break;
-		case SENSOR_PARTICLE_IR:		if (sck_max30105.getIR(wait)) return String(sck_max30105.IRchann); break;
-		case SENSOR_PARTICLE_TEMPERATURE:	if (sck_max30105.getTemperature(wait)) return String(sck_max30105.temperature); break;
+		case SENSOR_ALTITUDE:			if (sck_mpl3115A2.getAltitude()) return String(sck_mpl3115A2.altitude); break;
+		case SENSOR_PRESSURE:			if (sck_mpl3115A2.getPressure()) return String(sck_mpl3115A2.pressure); break;
+		case SENSOR_PRESSURE_TEMP:		if (sck_mpl3115A2.getTemperature()) return String(sck_mpl3115A2.temperature); break;
+		case SENSOR_PARTICLE_RED:		if (sck_max30105.getRed()) return String(sck_max30105.redChann); break;
+		case SENSOR_PARTICLE_GREEN:		if (sck_max30105.getGreen()) return String(sck_max30105.greenChann); break;
+		case SENSOR_PARTICLE_IR:		if (sck_max30105.getIR()) return String(sck_max30105.IRchann); break;
+		case SENSOR_PARTICLE_TEMPERATURE:	if (sck_max30105.getTemperature()) return String(sck_max30105.temperature); break;
 		case SENSOR_PM_1: 			if (sck_pm.update()) return String(sck_pm.pm1); break;
 		case SENSOR_PM_25: 			if (sck_pm.update()) return String(sck_pm.pm25); break;
 		case SENSOR_PM_10: 			if (sck_pm.update()) return String(sck_pm.pm10); break;
@@ -233,7 +197,7 @@ bool Sck_BH1721FVC::stop()
 {
 	return true;
 }
-bool Sck_BH1721FVC::get(bool wait)
+bool Sck_BH1721FVC::get()
 {
 
 	// Datasheet http://rohmfs.rohm.com/en/products/databook/datasheet/ic/sensor/light/bh1730fvc-e.pdf
@@ -369,7 +333,7 @@ bool Sck_SHT31::start()
 	delay(1); 		// In case the device was off
 	sendComm(SOFT_RESET); 	// Send reset command
 	delay(50); 		// Give time to finish reset
-	update(true);
+	update();
 
 	return true;
 }
@@ -379,7 +343,7 @@ bool Sck_SHT31::stop()
 	// It will go to idle state by itself after 1ms
 	return true;
 }
-bool Sck_SHT31::update(bool wait)
+bool Sck_SHT31::update()
 {
 	uint32_t elapsed = millis() - lastTime;
 	if (elapsed < timeout) delay(timeout - elapsed);
@@ -1117,7 +1081,7 @@ bool Sck_MPL3115A2::stop()
 
 	return true;
 }
-bool Sck_MPL3115A2::getAltitude(bool wait)
+bool Sck_MPL3115A2::getAltitude()
 {
 
 	Adafruit_mpl3115A2.begin();
@@ -1131,7 +1095,7 @@ bool Sck_MPL3115A2::getAltitude(bool wait)
 
 	return true;
 }
-bool Sck_MPL3115A2::getPressure(bool wait)
+bool Sck_MPL3115A2::getPressure()
 {
 
 	Adafruit_mpl3115A2.begin();
@@ -1141,7 +1105,7 @@ bool Sck_MPL3115A2::getPressure(bool wait)
 
 	return true;
 }
-bool Sck_MPL3115A2::getTemperature(bool wait)
+bool Sck_MPL3115A2::getTemperature()
 {
 
 	Adafruit_mpl3115A2.begin();
@@ -1166,7 +1130,7 @@ bool Sck_MAX30105::stop()
 	sparkfun_max30105.shutDown();
 	return true;
 }
-bool Sck_MAX30105::getRed(bool wait)
+bool Sck_MAX30105::getRed()
 {
 
 	sparkfun_max30105.wakeUp();
@@ -1177,7 +1141,7 @@ bool Sck_MAX30105::getRed(bool wait)
 	sparkfun_max30105.shutDown();
 	return true;
 }
-bool Sck_MAX30105::getGreen(bool wait)
+bool Sck_MAX30105::getGreen()
 {
 
 	sparkfun_max30105.wakeUp();
@@ -1188,7 +1152,7 @@ bool Sck_MAX30105::getGreen(bool wait)
 	sparkfun_max30105.shutDown();
 	return true;
 }
-bool Sck_MAX30105::getIR(bool wait)
+bool Sck_MAX30105::getIR()
 {
 
 	sparkfun_max30105.wakeUp();
@@ -1199,7 +1163,7 @@ bool Sck_MAX30105::getIR(bool wait)
 	sparkfun_max30105.shutDown();
 	return true;
 }
-bool Sck_MAX30105::getTemperature(bool wait)
+bool Sck_MAX30105::getTemperature()
 {
 	// NOT WORKING!!! (sparkfun lib)
 

@@ -143,7 +143,7 @@ void SckBase::setup()
 		}
 
 		if (!sensors[SENSOR_PM_10].enabled) enableSensor(SENSOR_PM_1); 	// Allow hotplug of PM sensor
-		urban.setup(this);
+		urban.setup();
 		urban.stop(SENSOR_PM_1); 	// Make sure PM is off until battery is ready for it
 		urbanPresent = true;
 	} else {
@@ -1398,8 +1398,8 @@ void SckBase::updateSensors()
 		for (uint8_t i=0; i<SENSOR_COUNT; i++) {
 			SensorType wichSensor = sensors.sensorsPriorized(i);
 			if (sensors[wichSensor].enabled && (rtc.getEpoch() - sensors[wichSensor].lastReadingTime >= (sensors[wichSensor].everyNint * config.readInterval))) {
-				if (getReading(wichSensor, true)) {
 					sensors[wichSensor].lastReadingTime = lastSensorUpdate;
+				if (getReading(wichSensor)) {
 					sprintf(outBuff, "%s: %s %s", sensors[wichSensor].title, sensors[wichSensor].reading.c_str(), sensors[wichSensor].unit);
 					sckOut(PRIO_LOW);
 				}
@@ -1482,7 +1482,7 @@ bool SckBase::disableSensor(SensorType wichSensor)
 
 	return false;
 }
-bool SckBase::getReading(SensorType wichSensor, bool wait)
+int16_t SckBase::getReading(SensorType wichSensor)
 {
 
 	sensors[wichSensor].valid = false;
@@ -1536,7 +1536,7 @@ bool SckBase::getReading(SensorType wichSensor, bool wait)
 		}
 		case BOARD_URBAN:
 		{
-				result = urban.getReading(this, wichSensor, wait);
+				result = urban.getReading(wichSensor);
 				if (result.startsWith("null")) return false;
 				break;
 		}
