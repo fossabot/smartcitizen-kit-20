@@ -1482,74 +1482,56 @@ bool SckBase::disableSensor(SensorType wichSensor)
 
 	return false;
 }
-int16_t SckBase::getReading(SensorType wichSensor)
+void SckBase::getReading(OneSensor *wichSensor)
 {
-
-	sensors[wichSensor].valid = false;
-	String result = "null";
-
-	switch (sensors[wichSensor].location) {
+	switch (wichSensor->location) {
 		case BOARD_BASE:
 		{
-				switch (wichSensor) {
+				switch (wichSensor->type) {
 					case SENSOR_BATT_PERCENT:
 					{
 						if (!battery.isPresent(charger)) {
-							result = String("-1");
-							break;
+							wichSensor->reading = String("-1");
+						} else {
+							uint32_t thisPercent = battery.percent();
+							if (thisPercent > 100) thisPercent = 100;
+							else if (thisPercent < 0) thisPercent = 0;
+							wichSensor->reading = String(thisPercent);
 						}
-						uint32_t thisPercent = battery.percent();
-						if (thisPercent > 100) thisPercent = 100;
-						else if (thisPercent < 0) thisPercent = 0;
-						result = String(thisPercent);
 						break;
 					}
 					case SENSOR_BATT_VOLTAGE:
-						if (!battery.isPresent(charger)) {
-							result = String("-1");
-							break;
-						}
-						result = String(battery.voltage());
+						if (!battery.isPresent(charger)) wichSensor->reading = String("-1");
+						else wichSensor->reading = String(battery.voltage());
 						break;
-
 					case SENSOR_BATT_CHARGE_RATE:
-						if (!battery.isPresent(charger)) {
-							result = String("-1");
-							break;
-						}
-						result = String(battery.current());
+						if (!battery.isPresent(charger)) wichSensor->reading = String("-1");
+						else wichSensor->reading = String(battery.current());
 						break;
 					case SENSOR_BATT_POWER:
-
-						if (!battery.isPresent(charger)) {
-							result = String("-1");
-							break;
-						}
-						result = String(battery.power());
+						if (!battery.isPresent(charger)) wichSensor->reading = String("-1");
+						else wichSensor->reading = String(battery.power());
 						break;
 					case SENSOR_SDCARD:
-						if (st.cardPresent) result = String("1");
-						else result = String("0");
+						if (st.cardPresent) wichSensor->reading = String("1");
+						else wichSensor->reading = String("0");
+						break;
 					default: break;
 				}
+				wichSensor->state = 0;
 				break;
 		}
 		case BOARD_URBAN:
 		{
-				result = urban.getReading(wichSensor);
-				if (result.startsWith("null")) return false;
+				urban.getReading(wichSensor);
 				break;
 		}
 		case BOARD_AUX:
 		{
-				result = String(auxBoards.getReading(wichSensor, this), 2);	// TODO port auxBoards to String mode
+				auxBoards.getReading(wichSensor, this);
 				break;
 		}
 	}
-
-	sensors[wichSensor].reading = result;
-	sensors[wichSensor].valid = true;
-	return true;;
 }
 bool SckBase::controlSensor(SensorType wichSensorType, String wichCommand)
 {
@@ -1740,8 +1722,8 @@ bool SckBase::setTime(String epoch)
 		st.timeStat.setOk();
 		if (urbanPresent) {
 			// Update MICS clock
-			getReading(SENSOR_CO_HEAT_TIME);
-			getReading(SENSOR_NO2_HEAT_TIME);
+			getReading(&sensors[SENSOR_CO_HEAT_TIME]);
+			getReading(&sensors[SENSOR_NO2_HEAT_TIME]);
 		}
 		espStarted = rtc.getEpoch() - wasOn;
 		ISOtime();
