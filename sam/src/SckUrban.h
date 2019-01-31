@@ -16,7 +16,7 @@
 //
 // * Light - BH1721 -> (0x29)
 // * Temperature and Humidity - SHT31 -> (0x44)
-// * CO and NO2 - MICS4515	
+// * CO and NO2 - MICS4515
 //      digital POT -> 0x2F
 // 	ADS7924 MICSADC -> 0x48
 // * Noise  - Invensense ICS43432 I2S microphone;microphone:
@@ -102,7 +102,7 @@ class Sck_MICS4514
 		const uint8_t CO_HEATER_ADC_CHANN = 3;
 		const uint8_t CO_ADC_CHANN = 2;
 		const float CO_HEATING_POWER = 0.076; 		// (watts) Typical heating power from datasheet
-		
+
 		// Nitrogen Dioxide
 		float heaterResistance_NO2 = 66.0; 		// Nominal value from datasheet (will be recalculated on boot)
 		float dutyCycle_NO2 = 50.0;  			// Start with low power until we can get the Heater resistance value.
@@ -232,9 +232,9 @@ class Sck_PM
 		bool detectionFailed = false;
 		uint32_t lastFail = 0;
 		uint32_t lastReading = 0;
-		
+
 							// 12 bytes:
-							// 0:1->pm1, 2:3->pm25, 4:5->pm10, 
+							// 0:1->pm1, 2:3->pm25, 4:5->pm10,
 							// 6:7->pm1, 8:9->pm2.5, 10:11->pm10   (under atmosferic enviroment)
 							// Number of particles with diameter beyond X um in 0.1 L of air.
 							// 12:13 -> 0.3 um
@@ -246,8 +246,15 @@ class Sck_PM
 
 		static const uint8_t buffLong = 27;
 		unsigned char buff[buffLong];
+		uint32_t rtcStarted = 0;
+		uint32_t rtcStopped = 0;
+		uint32_t rtcReading = 0;
+		RTCZero* rtc;
 
 	public:
+		Sck_PM(RTCZero* myrtc) {
+			rtc = myrtc;
+		}
 		// Readings
 		uint16_t pm1;
 		uint16_t pm25;
@@ -260,10 +267,12 @@ class Sck_PM
 		uint16_t pn10;
 
 		bool started = false;
+		uint16_t oneShotPeriod = 15;
 
 		bool start();
 		bool stop();
 		bool update();
+		int16_t oneShot(uint16_t period);
 		bool reset();
 };
 
@@ -311,6 +320,6 @@ class SckUrban
 		Sck_MAX30105 sck_max30105;
 
 		// PM sensor
-		Sck_PM sck_pm;
+		Sck_PM sck_pm = Sck_PM(rtc);
 };
 
